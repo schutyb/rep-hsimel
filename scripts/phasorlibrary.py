@@ -257,9 +257,10 @@ def rgb_coloring(dc, g, s, ic, center, Ro):
     return rgba
 
 
-def phasor_plot(dc, g, s, ic=None, title=None, xlabel=None, same_phasor=False):
+def phasor_plot(dc, g, s, ic=None, title=None, xlabel=None, same_phasor=False, num_phasors=1):
     """
         Plots nth phasors in the same figure.
+    :param num_phasors: amount of phasors to be plot
     :param dc: image stack with all the average images related to each phasor nxn dimension.
     :param g: nxn dimension image.
     :param s: nxn dimension image.
@@ -279,34 +280,30 @@ def phasor_plot(dc, g, s, ic=None, title=None, xlabel=None, same_phasor=False):
     if ic is None:
         ic = [0]
 
-    if len(dc) == len(ic):
-        if title is None:
-            title = ['Phasor']
-        num_phasors = len(dc)
-        # create the figures with all the phasors in each axes or create only one phasor
-        if num_phasors > 1:
-            fig, ax = plt.subplots(1, num_phasors, figsize=(18, 5))
-            fig.suptitle('Phasor')
-            for k in range(num_phasors):
-                x, y = (histogram_thresholding(dc[k], g[k], s[k], ic[k]))
-                phasor_circle(ax[k])
-                ax[k].hist2d(x, y, bins=256, cmap="RdYlGn_r", norm=colors.LogNorm(), range=[[-1, 1], [-1, 1]])
-                if len(title) > 1:
-                    ax[k].set_title(title[k])
-                    if xlabel:
-                        ax[k].set_xlabel(xlabel[k])
-                if same_phasor:
-                    ax[k].set_xlabel('ic' + '=' + str(ic[k]))
+    if title is None:
+        title = ['Phasor']
+    # create the figures with all the phasors in each axes or create only one phasor
+    if num_phasors > 1:
+        fig, ax = plt.subplots(1, num_phasors, figsize=(18, 5))
+        fig.suptitle('Phasor')
+        for k in range(num_phasors):
+            x, y = (histogram_thresholding(dc[k], g[k], s[k], ic[k]))
+            phasor_circle(ax[k])
+            ax[k].hist2d(x, y, bins=256, cmap="RdYlGn_r", norm=colors.LogNorm(), range=[[-1, 1], [-1, 1]])
+            if len(title) > 1:
+                ax[k].set_title(title[k])
+                if xlabel:
+                    ax[k].set_xlabel(xlabel[k])
+            if same_phasor:
+                ax[k].set_xlabel('ic' + '=' + str(ic[k]))
 
-        elif num_phasors == 1:
-            x, y = histogram_thresholding(dc, g, s, ic)
-            fig, ax = plt.subplots()
-            ax.hist2d(x, y, bins=256, cmap="RdYlGn_r", norm=colors.LogNorm(), range=[[-1, 1], [-1, 1]])
-            ax.set_title('Phasor')
-            phasor_circle(ax)
-        return fig
-    else:
-        raise ValueError("dc and ic have different length")
+    elif num_phasors == 1:
+        x, y = histogram_thresholding(dc, g, s, ic)
+        fig, ax = plt.subplots()
+        ax.hist2d(x, y, bins=256, cmap="RdYlGn_r", norm=colors.LogNorm(), range=[[-1, 1], [-1, 1]])
+        ax.set_title(title)
+        phasor_circle(ax)
+    return fig
 
 
 def circle_lines(ax, phase):
@@ -617,7 +614,7 @@ def im_thresholding(im, x1, x2):
     return aux
 
 
-def colored_image(ph, phinterval, md=None, mdinterval=None, outlier_cut=True, color_scale=0.92):
+def colored_image(ph, phinterval,  md=None, mdinterval=None, outlier_cut=True, color_scale=0.92):
     """
         Given the modulation and phase it returns the pseudo color image in RGB normalizing the phase and modulation
         intro [0, 1] in order to obtain the RGB
@@ -631,9 +628,8 @@ def colored_image(ph, phinterval, md=None, mdinterval=None, outlier_cut=True, co
     """
     if not (len(ph.shape) == 2):
         raise ValueError("Dimension error in phase matrix or modulation matrix")
-    if len(ph) and md:
-        if not (ph.shape == md.shape):
-            raise ValueError("Phase or Modulation matrix: Dimension not match")
+    if md and not (ph.shape == md.shape):
+        raise ValueError("Phase or Modulation matrix: Dimension not match")
     if not (len(phinterval) == 2):
         raise ValueError("ph interval is not 2d array")
 
@@ -642,43 +638,49 @@ def colored_image(ph, phinterval, md=None, mdinterval=None, outlier_cut=True, co
     if md is None:  # execute this sentence only if md is None
         for i in range(hsv.shape[0]):
             for j in range(hsv.shape[1]):
-                if outlier_cut:  # cut off the outliers so set them to black value is zero
-                    if phinterval[0] <= ph[i][j] <= phinterval[1]:
-                        hsv[i][j][0] = color_scale * (ph[i][j] - phinterval[0]) / abs(phinterval[0] - phinterval[1])
-                    else:
-                        hsv[i][j][:] = 0, 0, 0
-                else:  # in this case the outliers are put into the extremes 0 phase and maximum phase
-                    if phinterval[0] <= ph[i][j] <= phinterval[1]:
-                        hsv[i][j][0] = color_scale * (ph[i][j] - phinterval[0]) / abs(phinterval[0] - phinterval[1])
-                    elif ph[i][j] == phinterval[0]:
-                        hsv[i][j][0] = 0
-                    elif ph[i][j] == phinterval[1]:
-                        hsv[i][j][0] = color_scale
-                rgb[i][j][:] = colorsys.hsv_to_rgb(hsv[i][j][0], hsv[i][j][1], hsv[i][j][2])
+                if ph[i][j] == 0:
+                    rgb[i][j][:] = (0, 0, 0)
+                else:
+                    if outlier_cut:  # cut off the outliers so set them to black value is zero
+                        if phinterval[0] <= ph[i][j] <= phinterval[1]:
+                            hsv[i][j][0] = color_scale * (ph[i][j] - phinterval[0]) / abs(phinterval[0] - phinterval[1])
+                        else:
+                            hsv[i][j][:] = 0, 0, 0
+                    else:  # in this case the outliers are put into the extremes 0 phase and maximum phase
+                        if phinterval[0] <= ph[i][j] <= phinterval[1]:
+                            hsv[i][j][0] = color_scale * (ph[i][j] - phinterval[0]) / abs(phinterval[0] - phinterval[1])
+                        elif ph[i][j] == phinterval[0]:
+                            hsv[i][j][0] = 0
+                        elif ph[i][j] == phinterval[1]:
+                            hsv[i][j][0] = color_scale
+                    rgb[i][j][:] = colorsys.hsv_to_rgb(hsv[i][j][0], hsv[i][j][1], hsv[i][j][2])
     else:
         for i in range(hsv.shape[0]):
             for j in range(hsv.shape[1]):
-                if outlier_cut:
-                    if (phinterval[0] <= ph[i][j] <= phinterval[1]) and (mdinterval[0] <= md[i][j] <= mdinterval[1]):
-                        hsv[i][j][0] = color_scale * (ph[i][j] - phinterval[0]) / abs(phinterval[0] - phinterval[1])
-                        hsv[i][j][1] = (md[i][j] - mdinterval[0]) / abs(mdinterval[0] - mdinterval[1])
-                    else:
-                        hsv[i][j][:] = (0, 0, 0)
+                if ph[i][j] == 0:
+                    rgb[i][j][:] = (0, 0, 0)
                 else:
-                    if phinterval[0] <= ph[i][j] <= phinterval[1]:
-                        hsv[i][j][0] = color_scale * (ph[i][j] - phinterval[0]) / abs(phinterval[0] - phinterval[1])
-                    elif ph[i][j] == phinterval[0]:
-                        hsv[i][j][0] = 0
-                    elif ph[i][j] == phinterval[1]:
-                        hsv[i][j][0] = color_scale
+                    if outlier_cut:
+                        if (phinterval[0] <= ph[i][j] <= phinterval[1]) and (mdinterval[0] <= md[i][j] <= mdinterval[1]):
+                            hsv[i][j][0] = color_scale * (ph[i][j] - phinterval[0]) / abs(phinterval[0] - phinterval[1])
+                            hsv[i][j][1] = (md[i][j] - mdinterval[0]) / abs(mdinterval[0] - mdinterval[1])
+                        else:
+                            hsv[i][j][:] = (0, 0, 0)
+                    else:
+                        if phinterval[0] <= ph[i][j] <= phinterval[1]:
+                            hsv[i][j][0] = color_scale * (ph[i][j] - phinterval[0]) / abs(phinterval[0] - phinterval[1])
+                        elif ph[i][j] == phinterval[0]:
+                            hsv[i][j][0] = 0
+                        elif ph[i][j] == phinterval[1]:
+                            hsv[i][j][0] = color_scale
 
-                    if mdinterval[0] <= md[i][j] <= mdinterval[1]:
-                        hsv[i][j][1] = (md[i][j] - mdinterval[0]) / abs(mdinterval[0] - mdinterval[1])
-                    elif md[i][j] == mdinterval[0]:
-                        hsv[i][j][1] = 0
-                    elif md[i][j] == mdinterval[1]:
-                        hsv[i][j][1] = 1
-                rgb[i][j][:] = colorsys.hsv_to_rgb(hsv[i][j][0], hsv[i][j][1], hsv[i][j][2])
+                        if mdinterval[0] <= md[i][j] <= mdinterval[1]:
+                            hsv[i][j][1] = color_scale * (md[i][j] - mdinterval[0]) / abs(mdinterval[0] - mdinterval[1])
+                        elif md[i][j] == mdinterval[0]:
+                            hsv[i][j][1] = 0
+                        elif md[i][j] == mdinterval[1]:
+                            hsv[i][j][1] = 1
+                    rgb[i][j][:] = colorsys.hsv_to_rgb(hsv[i][j][0], hsv[i][j][1], hsv[i][j][2])
     return rgb
 
 
