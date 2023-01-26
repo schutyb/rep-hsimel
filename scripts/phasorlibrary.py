@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib import colors
 from matplotlib.widgets import Cursor
 import colorsys
+from matplotlib.pyplot import figure
 
 
 # TODO add all the raise ValueError in all the function
@@ -299,7 +300,7 @@ def phasor_plot(dc, g, s, ic=None, title=None, xlabel=None, same_phasor=False, n
 
     elif num_phasors == 1:
         x, y = histogram_thresholding(dc, g, s, ic)
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(10, 10))
         ax.hist2d(x, y, bins=256, cmap="RdYlGn_r", norm=colors.LogNorm(), range=[[-1, 1], [-1, 1]])
         ax.set_title(title)
         phasor_circle(ax)
@@ -714,3 +715,9 @@ def phasor_threshold(g, s, md, ph, phinterval, mdinterval):
         y = np.delete(s2, np.where(aux != 0))
 
     return x, y
+
+
+def back_threshold(im, minval, maxval):
+    """
+        Return the threshold image given a val for the back ground
+    """

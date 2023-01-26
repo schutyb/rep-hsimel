@@ -2,6 +2,7 @@
 PRIMERA PARTE: calculo y ploteo el phasor de los tres casos de las imagenes completas
 SEGUNDA PARTE: calculo y ploteo el phasor de las ROI's
 TERCERA PARTE: Pseudocolor
+CUARTA PARTE: Histogramas
 """
 
 import numpy as np
@@ -10,15 +11,20 @@ import phasorlibrary as ph
 import matplotlib.pyplot as plt
 from skimage.filters import median
 import os
+from skimage.exposure import equalize_adapthist
+from matplotlib.pyplot import figure
+
 
 """
 PRIMERA PARTE 
 """
 primero = False
 if primero:
-    names = ['SP_16256_6x3_bidir_gain600_4avg', 'SP_15237_9x8_bidir_gain600_4avg']
-    # 'SP_18852_10x10_bidir_autofocus' volver a hacer tiene desenfoque
-    tiledim = [[3, 6], [8, 9], [10, 10]]
+    # names = ['SP_16256_6x3_bidir_gain600_4avg', 'SP_15237_9x8_bidir_gain600_4avg']
+    names = ['SP_18852_10x10_bidir_autofocus']
+
+    # tiledim = [[3, 6], [8, 9], [10, 10]]
+    tiledim = [[10, 10]]
     data = []  # guardo los phasors de los tres acasos aca
     for i in range(len(names)):
         im = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/' + names[i] + '.lsm')  # Leo los archivos
@@ -85,6 +91,7 @@ if segundo:
                 md = median(md)
                 phase = median(phase)
 
+            # Umbralizar para sacar el background
             g = np.where(dc > 1, g, np.zeros(g.shape))
             s = np.where(dc > 1, s, np.zeros(g.shape))
             md = np.where(dc > 1, md, np.zeros(g.shape))
@@ -114,7 +121,8 @@ if tercero:
     for i in range(3):
         names = os.listdir('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/' + tipo[i] + '/phasors/')
         for k in range(len(names)):
-            im = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/' + tipo[i] + '/phasors/' + names[k])
+            im = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/' + tipo[i] + '/phasors/' +
+                                 names[k])
 
             plot_phase = False  # ploteo la imagen de la fase con una escala espectral para ver como se ve
             if plot_phase:
@@ -122,9 +130,20 @@ if tercero:
                 plt.savefig('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/' + tipo[i] + names[k] +
                             '.png', bbox_inches='tight')
 
-# Imagen de Pseudocolor
-im = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/SP_15237_9x8_bidir_gain600_4avg.ome.tiff')
-rgb = ph.colored_image(im[4], np.asarray([45, 180]),
-                       outlier_cut=False, color_scale=1)
-plt.imshow(rgb)
+plott = False
+if plott:
+    # Imagen de Pseudocolor
+    im = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/SP_16256_6x3_bidir_gain600_4avg.ome.tiff')
+    rgb = ph.colored_image(im[4], np.asarray([45, 180]), outlier_cut=False, color_scale=1)
+    plt.imshow(rgb)
+    plt.axis('off')
+    plt.show()
+    # plt.imshow(equalize_adapthist(im[0] / im[0].max()), cmap='gray')
+    # ph.phasor_plot(im[0], im[1], im[2])
+
+"""
+CUARTA PARTE 
+"""
+im = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/SP_16256_6x3_bidir_gain600_4avg.ome.tiff')
+plt.hist(im[0])
 plt.show()
