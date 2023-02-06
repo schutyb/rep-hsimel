@@ -21,10 +21,10 @@ PRIMERA PARTE
 primero = False
 if primero:
     # names = ['SP_16256_6x3_bidir_gain600_4avg', 'SP_15237_9x8_bidir_gain600_4avg']
-    names = ['SP_18852_10x10_bidir_autofocus']
+    names = ['16256_SP_7x3_bidir_autofocus_gain600']
 
     # tiledim = [[3, 6], [8, 9], [10, 10]]
-    tiledim = [[10, 10]]
+    tiledim = [[3, 7]]
     data = []  # guardo los phasors de los tres acasos aca
     for i in range(len(names)):
         im = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/' + names[i] + '.lsm')  # Leo los archivos
@@ -123,27 +123,45 @@ if tercero:
         for k in range(len(names)):
             im = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/' + tipo[i] + '/phasors/' +
                                  names[k])
-
-            plot_phase = False  # ploteo la imagen de la fase con una escala espectral para ver como se ve
+            plot_phase = True  # ploteo la imagen de la fase con una escala espectral para ver como se ve
             if plot_phase:
-                plt.imshow(im[4], cmap='nipy_spectral')
-                plt.savefig('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/' + tipo[i] + names[k] +
-                            '.png', bbox_inches='tight')
+                rgb = ph.colored_image(im[4], np.asarray([45, 180]), outlier_cut=False, color_scale=1)
+                ph.generate_file('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/' + tipo[i] + '/pseudocolor/' +
+                                 names[k][0:20] + '.ome.tiff', rgb)
+                plt.imshow(rgb)
+                plt.savefig('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/' + tipo[i] + '/' + '/pseudocolor/'
+                            + names[k][:20] + '.png', bbox_inches='tight')
 
 plott = False
 if plott:
     # Imagen de Pseudocolor
-    im = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/SP_16256_6x3_bidir_gain600_4avg.ome.tiff')
+    im = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/16256_SP_7x3_bidir_autofocus_gain600.ome.tiff')
     rgb = ph.colored_image(im[4], np.asarray([45, 180]), outlier_cut=False, color_scale=1)
     plt.imshow(rgb)
     plt.axis('off')
     plt.show()
-    # plt.imshow(equalize_adapthist(im[0] / im[0].max()), cmap='gray')
-    # ph.phasor_plot(im[0], im[1], im[2])
+    plt.imshow(equalize_adapthist(im[0] / im[0].max()), cmap='gray')
+    ph.phasor_plot(im[0], im[1], im[2])
 
 """
-CUARTA PARTE 
+CUARTA PARTE grafico los hitogramas de las tres imagenes completas
 """
-im = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/SP_16256_6x3_bidir_gain600_4avg.ome.tiff')
-plt.hist(im[0])
-plt.show()
+cuarto = False
+if cuarto:
+    imn = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/16256_SP_7x3_bidir_autofocus_gain600.ome.tiff')
+    imnp = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/SP_15237_9x8_bidir_gain600_4avg.ome.tiff')
+    imm = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/18852_SP_bidir_9x10_autofocus_gain600.ome.tiff')
+
+    bins = np.arange(45, 180)
+    # hago el histograma de las fases
+    histn = np.histogram(np.concatenate(imn[4]), bins=bins)
+    histnp = np.histogram(np.concatenate(imnp[4]), bins=bins)
+    histm = np.histogram(np.concatenate(imm[4]), bins=bins)
+
+    plt.plot(bins[0:134], histn[0] / max(histn[0]), 'r', label='nevo')
+    plt.plot(bins[0:134], histnp[0] / max(histnp[0]), 'b', label='nevopig')
+    plt.plot(bins[0:134], histm[0] / max(histm[0]), 'k', label='melanoma')
+    plt.yscale('log')
+    plt.legend()
+    plt.show()
+
