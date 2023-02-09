@@ -6,6 +6,8 @@ from skimage.filters import median
 import os
 from matplotlib.pyplot import figure
 from matplotlib import colors
+from sklearn.cluster import MeanShift, estimate_bandwidth, KMeans
+from sklearn.datasets import make_blobs
 
 
 """
@@ -33,23 +35,25 @@ if primero:
                          names[k][0:8] + '.ome.tiff', np.asarray([dc, g, s, md, phase]))
 
 """
-SEGUNDO: calculo los histogramas de mod y phase
+SEGUNDO: calculo los histogramas de mod y phase con la std
 """
 segundo = False
 if segundo:
     binsph = np.arange(45, 180)
     binsmd = np.linspace(0, 1, 100)
-    names = os.listdir('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/rois2/phasors/')
     hmd = []
     hph = []
     stdmd = []
     stdph = []
+    tipo = ['mel', 'nevo', 'nevop']
     for i in range(3):
+        names = os.listdir('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/rois2/phasors/' + tipo[i])
         histmd = []
         histph = []
-        for k in range(i*10, i*10+10):
+        for k in range(i*3, i*3+3):
 
-            im = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/rois2/phasors/' + names[k])
+            im = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/rois2/phasors/' + tipo[i] + '/' +
+                                 names[k])
             histmd.append(np.histogram(np.concatenate(im[3]), bins=binsmd)[0])
             histph.append(np.histogram(np.concatenate(im[4]), bins=binsph)[0])
         aux_hmd = np.mean(np.asarray(histmd), axis=0)
@@ -67,15 +71,18 @@ if segundo:
 
     plotty = True
     if plotty:
+        c = ['r', 'g', 'b']
+        plt.figure(1)
         for i in range(3):
-            plt.plot(binsph[0:134], hph[i] / max(hph[i]), 'ko-')
-            plt.fill_between(binsph[0:134], hph[i] / max(hph[i]) - stdph[i] / max(stdph[i]),
-                             hph[i] / max(hph[i]) + stdph[i] / max(stdph[i]))
-            plt.yscale('log')
-            plt.show()
+            plt.plot(binsph[0:134], hph[i] / max(hph[i]), 'k')
+            plt.fill_between(binsph[0:134], hph[i] / max(hph[i]),
+                             hph[i] / max(hph[i]) + stdph[i] / (max(stdph[i])), label=tipo[i])
+            plt.legend()
+            # plt.yscale('log')
+        plt.show()
 
 
-tercero = True
+tercero = False
 if tercero:
     names = os.listdir('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/rois2/phasors/')
     for i in range(len(names)):
@@ -101,3 +108,40 @@ if tercero:
         ax4.plot(np.arange(0, 1, 0.01)[:len(histmd)], histmd/max(histmd))
         plt.savefig('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/rois2/pseudocolor/'
                     + names[i][:10] + '.png', bbox_inches='tight')
+
+
+"""
+CUARTO: calculo el centro de masa de la distribucion de cada histograma de los 10 de cada grupo
+"""
+
+
+def val(x, y):
+    return np.sum(y * x) / np.sum(y)
+
+
+cuarto = True
+if cuarto:
+    binsph = np.arange(45, 180)
+    binsmd = np.linspace(0, 1, 100)
+    tipo = ['mel', 'nevo', 'nevop']
+    imd = np.zeros([3, 10])
+    iph = np.zeros([3, 10])
+    c = ['r', 'g', 'b']
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(15, 15))
+    for i in range(3):
+        names = os.listdir('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/rois2/phasors/' + tipo[i])
+        for k in range(10):
+
+            im = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/rois2/phasors/' + tipo[i] + '/'
+                                 + names[k])
+            histmd = np.histogram(np.concatenate(im[3]), bins=binsmd)[0][1:]
+            histph = np.histogram(np.concatenate(im[4]), bins=binsph)[0][1:]
+            #  calculo el centro de masa de cada histograma y lo guardo en una lista
+            imd[i][k] = val(binsmd[:98], histmd)
+            iph[i][k] = val(binsph[:133], histph)
+
+        ax1.plot(i * np.ones(len(imd[i])), imd[i], 'o', color=c[i])
+        ax2.plot(i * np.ones(len(iph[i])), iph[i], 'o', color=c[i])
+        ax1.grid()
+        ax2.grid()
+    plt.show()
