@@ -124,24 +124,67 @@ if cuarto:
     binsph = np.arange(45, 180)
     binsmd = np.linspace(0, 1, 100)
     tipo = ['mel', 'nevo', 'nevop']
-    imd = np.zeros([3, 10])
-    iph = np.zeros([3, 10])
     c = ['r', 'g', 'b']
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(15, 15))
+
     for i in range(3):
         names = os.listdir('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/rois2/phasors/' + tipo[i])
-        for k in range(10):
+        hist = False
+        if hist:
+            histmd = np.zeros(len(binsmd) - 2)
+            histph = np.zeros(len(binsph) - 2)
+            for k in range(len(names)):
+                im = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/rois2/phasors/' + tipo[i] + '/'
+                                     + names[k])
+                histmd = np.histogram(np.concatenate(im[3]), bins=binsmd)[0][1:] + histmd
+                histph = np.histogram(np.concatenate(im[4]), bins=binsph)[0][1:] + histph
+                #  calculo el centro de masa de cada histograma y lo guardo en una lista
+            histmd = histmd / len(names)
+            histph = histph / len(names)
 
-            im = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/rois2/phasors/' + tipo[i] + '/'
-                                 + names[k])
-            histmd = np.histogram(np.concatenate(im[3]), bins=binsmd)[0][1:]
-            histph = np.histogram(np.concatenate(im[4]), bins=binsph)[0][1:]
-            #  calculo el centro de masa de cada histograma y lo guardo en una lista
-            imd[i][k] = val(binsmd[:98], histmd)
-            iph[i][k] = val(binsph[:133], histph)
+            plt.figure(1)
+            plt.plot(histmd / histmd.max(), color=c[i], label=tipo[i])
+            plt.legend()
+            plt.title('Modulation')
+            # plt.yscale('log')
+            plt.grid()
 
-        ax1.plot(i * np.ones(len(imd[i])), imd[i], 'o', color=c[i])
-        ax2.plot(i * np.ones(len(iph[i])), iph[i], 'o', color=c[i])
-        ax1.grid()
-        ax2.grid()
-    plt.show()
+            plt.figure(2)
+            plt.plot(histph / histph.max(), color=c[i], label=tipo[i])
+            plt.legend()
+            plt.title('Phase')
+            # plt.yscale('log')
+            plt.grid()
+            # plt.show()
+        # calculo el centro de masa
+        cm = True
+        if cm:
+            imd = np.zeros([3, 7])
+            iph = np.zeros([3, 7])
+            for k in range(len(names)):
+                im = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/rois2/phasors/' + tipo[i] + '/'
+                                     + names[k])
+                histmd = np.histogram(np.concatenate(im[3]), bins=binsmd)[0][1:]
+                histph = np.histogram(np.concatenate(im[4]), bins=binsph)[0][1:]
+                #  calculo el centro de masa de cada histograma y lo guardo en una lista
+
+                imd[i][k] = val(binsmd[:98], histmd)
+                iph[i][k] = val(binsph[:133], histph)
+
+        plt.figure(1)
+        plt.plot(i * np.ones(len(iph[i])), iph[i], 'o', color=c[i], label=tipo[i])
+        plt.legend()
+        plt.title('CM: Phase')
+        plt.grid()
+
+        plt.figure(2)
+        plt.plot(i * np.ones(len(imd[i])), imd[i], 'o', color=c[i], label=tipo[i])
+        plt.legend()
+        plt.title('CM: Modulation')
+        plt.grid()
+
+        plt.figure(3)
+        plt.plot(imd[i], iph[i], 'o', color=c[i], label=tipo[i])
+        plt.title('CM: Modulation vs Phase')
+        plt.legend()
+        plt.grid()
+plt.show()

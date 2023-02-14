@@ -44,7 +44,7 @@ def phasor_tile(im_stack, dimx, dimy):
     """
         This function compute the fft and calculate the phasor for an stack containing many tiles
         of microscopy images.
-    :param dimy: images horizontal dimension
+    :param dimy: images horizontal dimension. for ex 1024 px
     :param dimx: images vertical dimension
     :param im_stack: image stack containing the n lambda channels
     :return: avg: is the average intensity image
@@ -717,7 +717,5 @@ def phasor_threshold(g, s, md, ph, phinterval, mdinterval):
     return x, y
 
 
-def back_threshold(im, minval, maxval):
-    """
-        Return the threshold image given a val for the back ground
-    """
+def center_of_mass(x, y):
+    return np.sum(y * x) / np.sum(y)
