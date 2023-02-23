@@ -261,7 +261,7 @@ def rgb_coloring(dc, g, s, ic, center, Ro):
 def phasor_plot(dc, g, s, ic=None, title=None, xlabel=None, same_phasor=False, num_phasors=1):
     """
         Plots nth phasors in the same figure.
-    :param num_phasors: amount of phasors to be plot
+    :param num_phasors: amount of phasors to be plotted
     :param dc: image stack with all the average images related to each phasor nxn dimension.
     :param g: nxn dimension image.
     :param s: nxn dimension image.

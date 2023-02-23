@@ -34,20 +34,18 @@ if compute:
 
 centros = True
 if centros:
-    im = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/rois2/phasors/mel/melp_001.ome.tiff')
+    im = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/componentes/phasors/02_FAD_1mg_ml.ome.tiff')
 
     X1 = np.zeros([2, len(np.concatenate(im[1]))])
     X1[0:, 0:] = np.concatenate(im[1]), np.concatenate(im[2])
     X = X1.T
-    # X = X2[~np.isnan(X2).any(axis=1)]
+    cluster = KMeans(n_clusters=1).fit(X)
+    coordx, coordy = cluster.cluster_centers_[0][0], cluster.cluster_centers_[0][1]
 
-    y = KMeans(n_clusters=1).fit_predict(X)
-
-    plot_cluster = True
-    if plot_cluster:
-        plt.figure(1)
-        plt.scatter(X[:, 0], X[:, 1], c=y)
-        plt.title("Phasor clustering")
-        plt.xlabel('G')
-        plt.ylabel('S')
-        plt.show()
+    circle1 = plt.Circle((coordx, coordy), 0.03, color='r')
+    fig, ax = plt.subplots(figsize=(8, 8))
+    phlib.phasor_circle(ax)
+    ax.add_patch(circle1)
+    ax.set_xlim(-1, 1)
+    ax.set_ylim(-1, 1)
+    plt.show()

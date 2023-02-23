@@ -1,167 +1,98 @@
-"""
-PRIMERA PARTE: calculo y ploteo el phasor de los tres casos de las imagenes completas
-SEGUNDA PARTE: calculo y ploteo el phasor de las ROI's
-TERCERA PARTE: Pseudocolor
-CUARTA PARTE: Histogramas
-"""
-
 import numpy as np
 import tifffile
-import phasorlibrary as ph
+import phasorlibrary as phlib
 import matplotlib.pyplot as plt
+from matplotlib import colors
 from skimage.filters import median
 import os
 from skimage.exposure import equalize_adapthist
 from matplotlib.pyplot import figure
+from sklearn.cluster import KMeans
 
 
-"""
-PRIMERA PARTE 
-"""
-primero = False
-if primero:
-    # names = ['SP_16256_6x3_bidir_gain600_4avg', 'SP_15237_9x8_bidir_gain600_4avg']
-    names = ['16256_SP_7x3_bidir_autofocus_gain600']
+''' GRAFICO EL HSI EL PHASOR Y LA PSEUDO COLOR'''
+rois = False
+if rois:
+    imm = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/rois2/phasors/mel/melp_001.ome.tiff')
+    dcm = imm[0]  # imagen de intensidad promedio que representa el HSI
+    rgbm = phlib.colored_image(imm[4], np.asarray([45, 180]), outlier_cut=False, color_scale=1)
 
-    # tiledim = [[3, 6], [8, 9], [10, 10]]
-    tiledim = [[3, 7]]
-    data = []  # guardo los phasors de los tres acasos aca
-    for i in range(len(names)):
-        im = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/' + names[i] + '.lsm')  # Leo los archivos
-        phasor = ph.phasor_tile(im, 1024, 1024)  # Calculo el phasor del tile
-        # Concateno las 5 imagenes que calcula phasor_tile
-        aux = []
-        for j in range(5):
-            aux.append(ph.concatenate(phasor[j], tiledim[i][0], tiledim[i][1], bidirectional=True, hper=0.07))
-        aux = np.asarray(aux)
-        # Filtro con la mediana G y S para limpiar el phasor
-        for k in range(3):
-            aux[1] = median(aux[1])
-            aux[2] = median(aux[2])
-            aux[3] = median(aux[3])
-            aux[4] = median(aux[4])
+    imn = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/rois2/phasors/nevo/nevo_001.ome.tiff')
+    dcn = imn[0]  # imagen de intensidad promedio que representa el HSI
+    rgbn = phlib.colored_image(imn[4], np.asarray([45, 180]), outlier_cut=False, color_scale=1)
 
-        aux[1] = np.where(aux[0] > 1, aux[1], np.zeros(aux[1].shape))
-        aux[2] = np.where(aux[0] > 1, aux[2], np.zeros(aux[2].shape))
-        aux[3] = np.where(aux[0] > 1, aux[3], np.zeros(aux[3].shape))
-        aux[4] = np.where(aux[0] > 1, aux[4], np.zeros(aux[4].shape))
+    imnp = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/rois2/phasors/nevop/nevop_01.ome.tiff')
+    dcnp = imnp[0]  # imagen de intensidad promedio que representa el HSI
+    rgbnp = phlib.colored_image(imnp[4], np.asarray([45, 180]), outlier_cut=False, color_scale=1)
 
-        ph.generate_file('/home/bruno/Documentos/Proyectos/hsimel/datos/' + names[i] + '.ome.tiff', aux)
-        data.append(aux)
+    binsph = np.arange(45, 180)
+    # binsmd = np.linspace(0, 1, 100)
 
-    plotty = False
-    if plotty:
-        # Grafico las HSI
-        # revisar la funcion from skimage.exposure import equalize_adapthist para hacer la hsi
-        # da problema porque los valores son entre -1 y 1
-        plt.figure(1)
-        plt.imshow(data[0][0], cmap='gray')
-        plt.title('Nevo sin pigmento')
-        plt.figure(2)
-        plt.imshow(data[1][0], cmap='gray')
-        plt.title('Nevo pigmentado')
-        plt.figure(3)
-        plt.imshow(data[2][0], cmap='gray')
-        plt.title('Melanoma')
+    # histmdn = np.histogram(np.concatenate(imn[3]), bins=binsmd)[0][1:]
+    histphn = np.histogram(np.concatenate(imn[4]), bins=binsph)[0][1:]
 
-        # Grafico los phasors
-        fig1 = ph.phasor_plot(np.asarray(data[0][0]), np.asarray(data[0][1]), np.asarray(data[0][2]), np.asarray([3]),
-                              title='Nevo sin pigmento')
-        fig2 = ph.phasor_plot(np.asarray(data[1][0]), np.asarray(data[1][1]), np.asarray(data[1][2]), np.asarray([3]),
-                              title='Nevo pigmentado')
-        fig3 = ph.phasor_plot(np.asarray(data[2][0]), np.asarray(data[2][1]), np.asarray(data[2][2]), np.asarray([3]),
-                              title='Melanoma')
-        plt.show()
+    # histmdnp = np.histogram(np.concatenate(imnp[3]), bins=binsmd)[0][1:]
+    histphnp = np.histogram(np.concatenate(imnp[4]), bins=binsph)[0][1:]
 
-"""
-SEGUNDA PARTE 
-"""
+    # histmdm = np.histogram(np.concatenate(imm[3]), bins=binsmd)[0][1:]
+    histphm = np.histogram(np.concatenate(imm[4]), bins=binsph)[0][1:]
 
-segundo = False
-if segundo:
-    tipo = ['nevo', 'nevopig', 'melanomas']
-    for i in range(3):
-        names = os.listdir('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/' + tipo[i] + '/sp/')
-        for k in range(len(names)):
-            im = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/' + tipo[i] + '/sp/' + names[k])
-            dc, g, s, md, phase = ph.phasor(im)
-            for j in range(3):
-                g = median(g)
-                s = median(s)
-                md = median(md)
-                phase = median(phase)
+    fig, ((ax1, ax2, ax3, axh1), (ax4, ax5, ax6, axh2), (ax7, ax8, ax9, axh3)) = plt.subplots(3, 4, figsize=(15, 10))
 
-            # Umbralizar para sacar el background
-            g = np.where(dc > 1, g, np.zeros(g.shape))
-            s = np.where(dc > 1, s, np.zeros(g.shape))
-            md = np.where(dc > 1, md, np.zeros(g.shape))
-            phase = np.where(dc > 1, phase, np.zeros(g.shape))
-            ph.generate_file('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/' + tipo[i] + '/phasors/' +
-                             names[k][0:32] + '.ome.tiff', np.asarray([dc, g, s, md, phase]))
+    # Nevo
+    ax1.imshow(equalize_adapthist(dcn / dcn.max()), cmap='gray')
+    ax1.axis('off')
+    ax2.hist2d(np.concatenate(imn[1]), np.concatenate(imn[2]), bins=256, cmap="RdYlGn_r", norm=colors.LogNorm(),
+               range=[[-1, 1], [-1, 1]])
+    phlib.phasor_circle(ax2)
+    ax3.axis('off')
+    ax3.imshow(rgbn)
+    axh1.plot(binsph[:133], histphn / histphn.max(), label='Phase')
+    axh1.legend()
+    axh1.set_yscale('log')
 
-            plotty = False
-            if plotty:
-                fig = ph.phasor_plot(dc, g, s, np.asarray([3]), title=names[k])
-                plt.savefig(
-                    '/home/bruno/Documentos/Proyectos/hsimel/datos/rois/' + tipo[i] + '/' + 'phasor' + names[k] +
-                    '.png', bbox_inches='tight')
-                plt.figure(2)
-                plt.imshow(dc, cmap='gray')
-                plt.axis('off')
-                plt.title(names[k])
-                plt.savefig('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/' + tipo[i] + '/' + 'hsi' + names[k] +
-                            '.png', bbox_inches='tight')
+    # Nevo pig
+    ax4.imshow(equalize_adapthist(dcnp / dcnp.max()), cmap='gray')
+    ax4.axis('off')
+    ax5.hist2d(np.concatenate(imnp[1]), np.concatenate(imnp[2]), bins=256, cmap="RdYlGn_r", norm=colors.LogNorm(),
+               range=[[-1, 1], [-1, 1]])
+    phlib.phasor_circle(ax5)
+    ax6.axis('off')
+    ax6.imshow(rgbnp)
+    axh2.plot(binsph[:133], histphnp / histphnp.max(), label='Phase')
+    axh2.legend()
+    axh2.set_yscale('log')
 
-"""
-TERCERA PARTE 
-"""
-tercero = False
-if tercero:
-    tipo = ['nevo', 'nevopig', 'melanomas']
-    for i in range(3):
-        names = os.listdir('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/' + tipo[i] + '/phasors/')
-        for k in range(len(names)):
-            im = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/' + tipo[i] + '/phasors/' +
-                                 names[k])
-            plot_phase = True  # ploteo la imagen de la fase con una escala espectral para ver como se ve
-            if plot_phase:
-                rgb = ph.colored_image(im[4], np.asarray([45, 180]), outlier_cut=False, color_scale=1)
-                ph.generate_file('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/' + tipo[i] + '/pseudocolor/' +
-                                 names[k][0:20] + '.ome.tiff', rgb)
-                plt.imshow(rgb)
-                plt.savefig('/home/bruno/Documentos/Proyectos/hsimel/datos/rois/' + tipo[i] + '/' + '/pseudocolor/'
-                            + names[k][:20] + '.png', bbox_inches='tight')
+    # Melanoma
+    ax7.imshow(equalize_adapthist(dcm/dcm.max()), cmap='gray')
+    ax7.axis('off')
+    ax8.hist2d(np.concatenate(imm[1]), np.concatenate(imm[2]), bins=256, cmap="RdYlGn_r", norm=colors.LogNorm(),
+               range=[[-1, 1], [-1, 1]])
+    phlib.phasor_circle(ax8)
+    ax9.axis('off')
+    ax9.imshow(rgbm)
+    axh3.plot(binsph[:133], histphm / histphm.max(), label='Phase')
+    axh3.legend()
+    axh3.set_yscale('log')
 
-plott = False
-if plott:
-    # Imagen de Pseudocolor
-    im = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/16256_SP_7x3_bidir_autofocus_gain600.ome.tiff')
-    rgb = ph.colored_image(im[4], np.asarray([45, 180]), outlier_cut=False, color_scale=1)
-    plt.imshow(rgb)
-    plt.axis('off')
-    plt.show()
-    plt.imshow(equalize_adapthist(im[0] / im[0].max()), cmap='gray')
-    ph.phasor_plot(im[0], im[1], im[2])
-
-"""
-CUARTA PARTE grafico los hitogramas de las tres imagenes completas
-"""
-cuarto = False
-if cuarto:
-    imn = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/16256_SP_7x3_bidir_autofocus_gain600.ome.tiff')
-    imnp = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/SP_15237_9x8_bidir_gain600_4avg.ome.tiff')
-    imm = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/18852_SP_bidir_9x10_autofocus_gain600.ome.tiff')
-
-    bins = np.arange(45, 180)
-    # hago el histograma de las fases
-    histn = np.histogram(np.concatenate(imn[4]), bins=bins)
-    histnp = np.histogram(np.concatenate(imnp[4]), bins=bins)
-    histm = np.histogram(np.concatenate(imm[4]), bins=bins)
-
-    plt.plot(bins[0:134], histn[0] / max(histn[0]), 'r', label='nevo')
-    plt.plot(bins[0:134], histnp[0] / max(histnp[0]), 'b', label='nevopig')
-    plt.plot(bins[0:134], histm[0] / max(histm[0]), 'k', label='melanoma')
-    plt.yscale('log')
-    plt.legend()
     plt.show()
 
+
+''' GRAFICO Todas las componentes en el solo phasor'''
+componentes = False
+if componentes:
+    im = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/componentes/phasors/02_FAD_1mg_ml.ome.tiff')
+
+    X1 = np.zeros([2, len(np.concatenate(im[1]))])
+    X1[0:, 0:] = np.concatenate(im[1]), np.concatenate(im[2])
+    X = X1.T
+    cluster = KMeans(n_clusters=1).fit(X)
+    coordx, coordy = cluster.cluster_centers_[0][0], cluster.cluster_centers_[0][1]
+
+    circle1 = plt.Circle((coordx, coordy), 0.03, color='r')
+    fig, ax = plt.subplots(figsize=(8, 8))
+    phlib.phasor_circle(ax)
+    ax.add_patch(circle1)
+    ax.set_xlim(-1, 1)
+    ax.set_ylim(-1, 1)
+    plt.show()

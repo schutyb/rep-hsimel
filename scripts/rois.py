@@ -119,7 +119,7 @@ def val(x, y):
     return np.sum(y * x) / np.sum(y)
 
 
-cuarto = True
+cuarto = False
 if cuarto:
     binsph = np.arange(45, 180)
     binsmd = np.linspace(0, 1, 100)
@@ -187,4 +187,4 @@ if cuarto:
         plt.title('CM: Modulation vs Phase')
         plt.legend()
         plt.grid()
-plt.show()
+    plt.show()
