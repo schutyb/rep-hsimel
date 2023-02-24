@@ -9,7 +9,6 @@ from skimage.exposure import equalize_adapthist
 from matplotlib.pyplot import figure
 from sklearn.cluster import KMeans
 
-
 ''' GRAFICO EL HSI EL PHASOR Y LA PSEUDO COLOR'''
 rois = False
 if rois:
@@ -64,7 +63,7 @@ if rois:
     axh2.set_yscale('log')
 
     # Melanoma
-    ax7.imshow(equalize_adapthist(dcm/dcm.max()), cmap='gray')
+    ax7.imshow(equalize_adapthist(dcm / dcm.max()), cmap='gray')
     ax7.axis('off')
     ax8.hist2d(np.concatenate(imm[1]), np.concatenate(imm[2]), bins=256, cmap="RdYlGn_r", norm=colors.LogNorm(),
                range=[[-1, 1], [-1, 1]])
@@ -77,22 +76,42 @@ if rois:
 
     plt.show()
 
-
 ''' GRAFICO Todas las componentes en el solo phasor'''
-componentes = False
+componentes = True
 if componentes:
-    im = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/componentes/phasors/02_FAD_1mg_ml.ome.tiff')
+    names = os.listdir('/home/bruno/Documentos/Proyectos/hsimel/phasors/')
+    c = ['PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu', 'RdYlBu',
+         'RdYlGn', 'Spectral', 'coolwarm', 'bwr', 'seismic']
 
-    X1 = np.zeros([2, len(np.concatenate(im[1]))])
-    X1[0:, 0:] = np.concatenate(im[1]), np.concatenate(im[2])
-    X = X1.T
-    cluster = KMeans(n_clusters=1).fit(X)
-    coordx, coordy = cluster.cluster_centers_[0][0], cluster.cluster_centers_[0][1]
-
-    circle1 = plt.Circle((coordx, coordy), 0.03, color='r')
-    fig, ax = plt.subplots(figsize=(8, 8))
+    # creo la figura
+    figure, ax = plt.subplots(figsize=(8, 8))
     phlib.phasor_circle(ax)
-    ax.add_patch(circle1)
-    ax.set_xlim(-1, 1)
-    ax.set_ylim(-1, 1)
+
+    for i in range(len(names)):
+        im = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/phasors/' + names[i])
+        g = np.concatenate(im[1])
+        s = np.concatenate(im[2])
+
+        # las tres lineas de abajo eliminan los ceros y dejan solo el phasor
+        aux = g * s
+        g = np.delete(g, np.where(aux == 0))
+        s = np.delete(s, np.where(aux == 0))
+
+        # comentar la linea de abajo para No mostrar los phasors
+        # ax.hist2d(g, s, bins=512, cmap=c[i], norm=colors.LogNorm(), range=[[-1, 1], [-1, 1]])
+
+        clustering = True
+        if clustering:
+            X1 = np.zeros([2, len(g)])
+            X1[0:, 0:] = g, s
+            X = X1.T
+            cluster = KMeans(n_clusters=1).fit(X)
+            coordx, coordy = cluster.cluster_centers_[0][0], cluster.cluster_centers_[0][1]
+
+            circle1 = plt.Circle((coordx, coordy), 0.01, color='r')
+            # fig, ax = plt.subplots(figsize=(8, 8))
+            phlib.phasor_circle(ax)
+            ax.add_patch(circle1)
+            ax.set_xlim(-1, 1)
+            ax.set_ylim(-1, 1)
     plt.show()
