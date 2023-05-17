@@ -8,6 +8,7 @@ from matplotlib import colors
 import os
 from sklearn.cluster import KMeans
 import pandas as pd
+import confidence_ellipse as confe
 
 
 cal = False
@@ -35,9 +36,14 @@ if plotty:
     datam = pd.read_csv('/home/bruno/Documentos/Proyectos/hsimel/cmm.csv')
     datan = pd.read_csv('/home/bruno/Documentos/Proyectos/hsimel/cmn.csv')
 
-    plt.figure(1)
+    fig, ax = plt.subplots(1)
     plt.plot(datam["Col0"], datam["Col1"], 'ro', label='melanoma')
     plt.plot(datan["Col0"], datan["Col1"], 'bo', label='nevo')
+    plt.xlim([0.2, 0.8])
+    plt.ylim([60, 140])
     plt.legend()
     plt.grid()
-    plt.show()
+    confe.confidence_ellipse(datam["Col0"], datam["Col1"], ax, edgecolor='red')
+    confe.confidence_ellipse(datan["Col0"], datan["Col1"], ax, edgecolor='blue')
+
+plt.show()
