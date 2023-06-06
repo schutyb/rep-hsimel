@@ -5,9 +5,9 @@ import phasorlibrary as phlib
 import os
 import pandas as pd
 from phasorlibrary import confidence_ellipse
+from scipy.stats import ttest_ind
 
-
-cal = True
+cal = False
 if cal:
     binsph = np.arange(45, 180)
     binsmd = np.linspace(0, 1, 101)
@@ -62,13 +62,13 @@ if cal:
     ax3.grid()
 
 # Grafico la Elipse de confidencia con los centros de masa
-plotty = True
+plotty = False
 if plotty:
     datam = pd.read_csv('/home/bruno/Documentos/Proyectos/hsimel/Paper/figures/fig4/cmm.csv')
     datan = pd.read_csv('/home/bruno/Documentos/Proyectos/hsimel/Paper/figures/fig4/cmn.csv')
 
     fig, ax = plt.subplots(1)
-    plt.plot(datan["Col0"], datan["Col1"], 'bo', label='Nevus')
+    plt.plot(datan["Col0"], datan["Col1"], 'b*', label='Nevus')
     plt.plot(datam["Col0"], datam["Col1"], 'ro', label='Melanoma')
     plt.xlim([0.2, 0.8])
     plt.ylim([60, 140])
@@ -86,17 +86,25 @@ if plotty:
     confidence_ellipse(datan["Col0"], datan["Col1"], ax, n_std=1, edgecolor='blue')
 
     plt.figure(4)
-    plt.plot(np.ones(len(datan["Col0"])), datan["Col0"], 'bo', label='Nevus')
+    plt.plot(np.ones(len(datan["Col0"])), datan["Col0"], 'b*', label='Nevus')
     plt.plot(2 * np.ones(len(datam["Col0"])), datam["Col0"], 'ro', label='Melanoma')
     plt.legend()
     plt.ylabel('Modulation')
     plt.grid()
 
     plt.figure(5)
-    plt.plot(np.ones(len(datan["Col1"])), datan["Col1"], 'bo', label='Nevus')
+    plt.plot(np.ones(len(datan["Col1"])), datan["Col1"], 'b*', label='Nevus')
     plt.plot(2 * np.ones(len(datam["Col1"])), datam["Col1"], 'ro', label='Melanoma')
     plt.legend()
     plt.ylabel('Phase')
     plt.grid()
 
     plt.show()
+
+ttest = True
+if ttest:
+    datam = pd.read_csv('/home/bruno/Documentos/Proyectos/hsimel/Paper/figures/fig4/cmm.csv')
+    datan = pd.read_csv('/home/bruno/Documentos/Proyectos/hsimel/Paper/figures/fig4/cmn.csv')
+    tm, pm = ttest_ind(datam["Col0"], datan["Col0"], equal_var=False)
+    tp, pp = ttest_ind(datam["Col1"], datan["Col1"], equal_var=False)
+    print('p mod =', pm, 'p phase=', pp)
