@@ -108,3 +108,6 @@ if ttest:
     tm, pm = ttest_ind(datam["Col0"], datan["Col0"], equal_var=False)
     tp, pp = ttest_ind(datam["Col1"], datan["Col1"], equal_var=False)
     print('p mod =', pm, 'p phase=', pp)
+
+    print('Mel', np.mean(datam["Col0"]), np.std(datam["Col0"]), np.mean(datam["Col1"]), np.std(datam["Col1"]))
+    print('Nevo', np.mean(datan["Col0"]), np.std(datan["Col0"]), np.mean(datan["Col1"]), np.std(datan["Col1"]))
