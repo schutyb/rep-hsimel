@@ -231,7 +231,7 @@ def phasor_circle(ax):
 
 
 def add_color_wheel(axis, num_colors=1024, saturation=0.8, value=0.95,
-                    hue_range=(0, 360), display_range=(45, 180), rad_cutoff=1.0):
+                    hue_range=(0, 360), display_range=(45, 210), rad_cutoff=1.0):
     # Ensure hue and display ranges are valid
     hue_start, hue_end = hue_range
     display_start, display_end = display_range

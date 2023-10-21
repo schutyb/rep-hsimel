@@ -5,11 +5,12 @@ from hsipy import hsitools, hsi_visualization
 import tifffile
 
 
-im = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/Paper/data/spectral/lsm/mel_18852_06x06.lsm')
-dc, g, s, md, ph = np.asarray(hsitools.tilephasor(im, 1024, 1024))
-scan_dir = False
+im = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/nevo_15397_02x06.lsm')
+dc, g, s, md, ph = np.asarray(hsitools.tilephasor(im, dimx=1024, dimy=1024))
 dx = 6
-dy = 6
+dy = 2
+scan_dir = False
+
 dc = hsitools.tile_stitching(dc, dx, dy, bidirectional=scan_dir)
 g = hsitools.tile_stitching(g, dx, dy, bidirectional=scan_dir)
 s = hsitools.tile_stitching(s, dx, dy, bidirectional=scan_dir)

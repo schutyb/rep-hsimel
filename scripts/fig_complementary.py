@@ -7,10 +7,10 @@ from skimage.exposure import equalize_adapthist
 from matplotlib import colors
 import phasorlibrary as phlib
 
-im = tifffile.imread('/home/bruno/Downloads/SP_muestra_18852_Tile_6x6_pos_2b.lsm')
+im = tifffile.imread('/home/bruno/Documentos/Proyectos/hsimel/datos/nevo_15361_04x02.lsm')
 dc, g, s, md, ph = np.asarray(hsipy.hsitools.tilephasor(im, dimx=1024, dimy=1024))
-dx = 6
-dy = 6
+dx = 2
+dy = 4
 scan_dir = False
 
 dc = hsipy.hsitools.tile_stitching(dc, dx, dy, bidirectional=scan_dir)
@@ -20,11 +20,11 @@ md = hsipy.hsitools.tile_stitching(md, dx, dy, bidirectional=scan_dir)
 ph = hsipy.hsitools.tile_stitching(ph, dx, dy, bidirectional=scan_dir)
 
 # Filtro con la mediana G y S para limpiar el phasor
-for k in range(5):
+for k in range(3):
     g = median(g)
     s = median(s)
 
-plotty = True
+plotty = False
 if plotty:
     threshold = True
     if threshold:
